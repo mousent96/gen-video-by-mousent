@@ -44,4 +44,6 @@ Mở các PNG trong `output/frames/` để chắc video không đen/đứng hìn
 
 ## 4. Giao
 
+Trên cloud (`CLAUDE_CODE_REMOTE=true`, ví dụ người dùng dùng app điện thoại): commit + push MP4 lên nhánh hiện tại và gửi link GitHub — xem mục "Chạy trên cloud" trong `/video-pipeline`.
+
 Báo người dùng: đường dẫn MP4 (`productions/<slug>/output/…`), thời lượng, độ phân giải, dung lượng, file `.srt`, thumbnail, credit nhạc/SFX (từ `assets.json`), và mọi "Giả định" trong `brief.md`. Gợi ý tiêu đề + mô tả + hashtag cho nền tảng trong brief nếu hợp. Xong: `production.py done <slug> render`.

@@ -16,6 +16,7 @@ python .claude/skills/video-pipeline/scripts/tts_edge.py productions/<slug>
 ```
 
 - Đọc `voice.name`, `voice.rate`, `voice.pitch` từ `script.json`; chỉ tạo lại cảnh có lời thoại đổi (cache theo hash). `--force` để tạo lại hết, `--only s03,s05` cho vài cảnh.
+- Lỗi kết nối / timeout tới `speech.platform.bing.com` trên cloud = environment chặn mạng: báo người dùng cho phép domain đó (xem `/video-pipeline` → Chạy trên cloud).
 - Dịch vụ edge-tts hay từ chối ngẫu nhiên khi có `rate`/`pitch` ("No audio was received"): script thử lại 3 lần rồi đọc ở tốc độ mặc định và in `warn`. Chỉ dùng `rate` (ví dụ `+10%`), tránh `pitch`. Thấy `warn` thì báo người dùng.
 - Liệt kê giọng: `python -m edge_tts --list-voices | findstr vi-VN` (PowerShell) hoặc `| grep vi-VN`.
 - Nghe thử 1 câu trước khi chạy cả kịch bản nếu người dùng kén giọng.

@@ -56,6 +56,24 @@ Mặc định dừng lại cho người dùng duyệt ở **2 chỗ**:
 
 Nếu người dùng nói "tự làm hết", "không cần hỏi", "auto" → ghi `"auto": true` vào `state.json` (lệnh `production.py new ... --auto`) và chạy thẳng đến file MP4, vẫn tự kiểm tra ở bước dựng và render.
 
+## Chạy trên cloud (app điện thoại, claude.ai/code)
+
+Nhận biết: biến môi trường `CLAUDE_CODE_REMOTE=true`. Khi đó:
+
+1. **Trước bước đầu tiên**: nếu `ffprobe` chưa có, `python3 -c "import edge_tts"` lỗi, hoặc `hyperframes/skills` rỗng → chạy `bash scripts/cloud-setup.sh` (1–3 phút) rồi `python3 .claude/skills/video-pipeline/scripts/check_env.py`. Nó in `CẢNH BÁO` về `speech.platform.bing.com` → báo người dùng đổi network access của environment (Custom: thêm `speech.platform.bing.com`, `cdn.jsdelivr.net`; hoặc Full) rồi mở session mới — không tự đổi sang giọng khác.
+2. **Người dùng đang trên điện thoại**: tin nhắn ngắn. Checkpoint kịch bản gửi bảng gọn (# | lời thoại | chữ trên màn hình), tối đa ~10 dòng.
+3. **Không có Studio preview** (localhost của VM không mở được từ điện thoại): thay checkpoint "xem preview" bằng render bản nháp (`--quality draft` / `--crf=28 --scale=0.5`), push lên nhánh (mục Giao bên dưới) và gửi link, kèm 2–3 ảnh snapshot đã tự xem. Người dùng góp ý → sửa → render lại.
+4. **Giao file**: VM không cho tải trực tiếp. Sau khi `verify_render.py` PASS:
+
+   ```bash
+   git add -f productions/<slug>/output/<slug>.mp4 productions/<slug>/output/thumbnail.png productions/<slug>/output/<slug>.srt
+   git add productions/<slug>/brief.md productions/<slug>/script.json productions/<slug>/timeline.json productions/<slug>/assets.json
+   git commit -m "video: <slug>" && git push -u origin HEAD
+   ```
+
+   Gửi link mở được trên điện thoại: `https://github.com/<owner>/<repo>/blob/<branch>/productions/<slug>/output/<slug>.mp4` (lấy `<owner>/<repo>` từ `git remote get-url origin`, `<branch>` từ `git branch --show-current`; repo private cần đăng nhập GitHub). File > 95 MB không push được → render lại với CRF cao hơn.
+5. Lệnh dài (render > 2 phút): chạy nền và chờ thông báo; VM có 4 vCPU nên render 1080p chậm hơn máy thường.
+
 ## Quy tắc chung
 
 - Mọi đường dẫn file media trong project là tương đối, nằm trong project; render không được tải gì từ mạng.

@@ -62,3 +62,20 @@ git add hyperframes remotion && git commit -m "chore: bump upstream"
 
 - Remotion miễn phí cho cá nhân và công ty ≤ 3 người; lớn hơn cần [license](https://www.remotion.pro/license).
 - edge-tts dùng dịch vụ đọc của Microsoft Edge (cần mạng, không chính thức) — đủ cho làm nội dung, nhưng có thể đổi sang provider khác trong `/video-voice`.
+
+## Dùng từ app Claude trên điện thoại
+
+1. Push repo lên GitHub, cài Claude GitHub App cho repo (https://github.com/apps/claude).
+2. Trên claude.ai/code → Cloud environment → **Network access**: chọn **Custom**, tick *Also include default list*, thêm:
+   ```
+   speech.platform.bing.com
+   cdn.jsdelivr.net
+   ```
+   (hoặc chọn **Full**). Không có 2 domain này thì giọng đọc edge-tts và HyperFrames sẽ lỗi.
+3. (Tuỳ chọn, cho session khởi động nhanh) dán vào **Setup script** của environment:
+   ```bash
+   apt-get update && apt-get install -y ffmpeg fonts-noto-core libnss3 libgbm1 libxkbcommon0 libasound2t64
+   pip install -U edge-tts
+   ```
+4. App Claude → tab **Code** → chọn repo → chat: *"làm video 9:16 dài 30 giây về …"*.
+   Claude tự chạy `scripts/cloud-setup.sh` nếu thiếu tool, gửi kịch bản để bạn duyệt, rồi push MP4 lên một nhánh và gửi link GitHub để xem trên điện thoại.
