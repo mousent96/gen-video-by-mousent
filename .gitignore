@@ -1,0 +1,15 @@
+# Video production: giữ brief/script/timeline, bỏ file nặng sinh ra
+productions/*/project/node_modules/
+productions/*/project/out/
+productions/*/output/
+**/.hyperframes/
+*.mp4
+*.mov
+*.webm
+
+# Python / OS
+__pycache__/
+*.pyc
+.DS_Store
+Thumbs.db
+.env

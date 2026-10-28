@@ -1,0 +1,30 @@
+name: Setup video env
+description: Node, Python, FFmpeg, font tiếng Việt, edge-tts, Chrome cho HyperFrames, và skill của 2 repo upstream.
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-node@v4
+      with:
+        node-version: 22
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+    - name: System packages
+      shell: bash
+      run: |
+        sudo apt-get update -q
+        sudo apt-get install -y -q ffmpeg fonts-noto-core fonts-noto-color-emoji fonts-dejavu-core
+    - name: Python packages
+      shell: bash
+      run: python -m pip install -q -U edge-tts
+    - name: Upstream skills (sparse)
+      shell: bash
+      run: bash scripts/fetch-upstream.sh
+    - name: HyperFrames browser
+      shell: bash
+      run: |
+        npx -y hyperframes telemetry disable || true
+        npx -y hyperframes browser ensure
+    - name: Check env
+      shell: bash
+      run: python .claude/skills/video-pipeline/scripts/check_env.py

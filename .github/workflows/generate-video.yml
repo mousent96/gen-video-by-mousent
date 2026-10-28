@@ -1,0 +1,111 @@
+name: Generate video
+
+# Chạy tay: Actions → Generate video → Run workflow, điền chủ đề.
+# Cần secret ANTHROPIC_API_KEY (hoặc CLAUDE_CODE_OAUTH_TOKEN từ `claude setup-token`).
+on:
+  workflow_dispatch:
+    inputs:
+      topic:
+        description: "Chủ đề / yêu cầu video (càng cụ thể càng tốt)"
+        required: true
+      format:
+        description: "Khung hình"
+        type: choice
+        options: ["9:16", "16:9", "1:1", "4:5"]
+        default: "9:16"
+      duration:
+        description: "Độ dài mục tiêu (giây)"
+        default: "30"
+      engine:
+        type: choice
+        options: [hyperframes, remotion]
+        default: hyperframes
+      lang:
+        description: "Ngôn ngữ giọng đọc (vi, en, ...)"
+        default: vi
+      voice:
+        description: "Giọng edge-tts (để trống = mặc định theo ngôn ngữ)"
+        default: ""
+      source:
+        description: "URL tài liệu nguồn (tuỳ chọn)"
+        default: ""
+      commit_sources:
+        description: "Commit brief/script/timeline vào nhánh video/<slug>"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+  id-token: write
+
+concurrency:
+  group: generate-video-${{ github.run_id }}
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: false
+
+      - uses: ./.github/actions/setup-video-env
+
+      - name: Claude Code — chạy pipeline A→Z
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          prompt: |
+            Dùng skill /video-pipeline để làm một video hoàn chỉnh từ A→Z, chế độ tự động (production.py new ... --auto):
+            không hỏi lại, tự quyết mọi lựa chọn hợp lý và ghi vào phần "Giả định" của brief.md.
+
+            - Yêu cầu: ${{ inputs.topic }}
+            - Khung hình: ${{ inputs.format }}
+            - Độ dài mục tiêu: ${{ inputs.duration }} giây
+            - Engine: ${{ inputs.engine }}
+            - Ngôn ngữ: ${{ inputs.lang }}
+            - Giọng: ${{ inputs.voice || 'mặc định theo ngôn ngữ' }}
+            - Nguồn: ${{ inputs.source || 'không có' }}
+
+            Môi trường CI Linux đã cài sẵn ffmpeg, edge-tts, Chrome cho HyperFrames; bỏ qua /video-setup.
+            Không dùng dịch vụ trả phí (HeyGen, ElevenLabs, Gemini). Không có preview/người duyệt: thay bước preview
+            bằng check + snapshot và tự xem ảnh. Render bản cuối, chạy verify_render.py đến khi PASS.
+            Kết thúc bằng tóm tắt: slug, đường dẫn MP4, thời lượng, các giả định.
+          claude_args: |
+            --max-turns 200
+            --allowedTools Bash,Read,Write,Edit,MultiEdit,Glob,Grep,WebFetch,WebSearch,Skill,TodoWrite
+
+      - name: Tìm production
+        id: prod
+        if: always()
+        shell: bash
+        run: |
+          dir=$(ls -td productions/*/ 2>/dev/null | head -1 || true)
+          echo "dir=${dir%/}" >> "$GITHUB_OUTPUT"
+          echo "slug=$(basename "${dir%/}")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload video
+        if: always() && steps.prod.outputs.dir != ''
+        uses: actions/upload-artifact@v4
+        with:
+          name: video-${{ steps.prod.outputs.slug }}
+          path: |
+            ${{ steps.prod.outputs.dir }}/output/
+            ${{ steps.prod.outputs.dir }}/brief.md
+            ${{ steps.prod.outputs.dir }}/script.json
+            ${{ steps.prod.outputs.dir }}/captions.srt
+          if-no-files-found: warn
+
+      - name: Commit nguồn video
+        if: inputs.commit_sources && steps.prod.outputs.dir != ''
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          branch="video/${{ steps.prod.outputs.slug }}"
+          git checkout -b "$branch"
+          git add -- "${{ steps.prod.outputs.dir }}"
+          git commit -m "video: ${{ steps.prod.outputs.slug }}"
+          git push origin "$branch"

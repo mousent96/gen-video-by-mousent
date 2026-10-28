@@ -1,0 +1,55 @@
+name: Claude
+
+# Nhắc @claude trong issue / comment / PR, ví dụ:
+#   "@claude làm video 9:16 dài 30 giây giới thiệu sản phẩm X"
+#   "@claude sửa cảnh s03 của video abc: chữ to hơn, rồi render lại"
+# Video render xong được đính kèm ở mục Artifacts của lần chạy workflow.
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+          submodules: false
+
+      - uses: ./.github/actions/setup-video-env
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          claude_args: |
+            --max-turns 200
+            --allowedTools Bash,Read,Write,Edit,MultiEdit,Glob,Grep,WebFetch,WebSearch,Skill,TodoWrite
+            --append-system-prompt "Đang chạy trên GitHub Actions (Linux), môi trường video đã cài sẵn. Yêu cầu làm/sửa video: dùng /video-pipeline ở chế độ auto, không dùng dịch vụ trả phí, render và chạy verify_render.py. File MP4 sẽ được tải lên Artifacts của workflow run; báo link run trong comment."
+
+      - name: Upload video
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: videos-${{ github.run_id }}
+          path: |
+            productions/*/output/
+            productions/*/script.json
+            productions/*/brief.md
+          if-no-files-found: ignore
