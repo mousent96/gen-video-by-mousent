@@ -13,3 +13,6 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .env
+
+# Đánh dấu của cloud-setup.sh
+.claude/.hf-browser-ok

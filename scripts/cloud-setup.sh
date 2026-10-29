@@ -23,9 +23,9 @@ if ! command -v ffprobe >/dev/null 2>&1; then
   $SUDO apt-get install -y -qq libasound2t64 >&2 2>/dev/null || $SUDO apt-get install -y -qq libasound2 >&2 || true
 fi
 
-# 3. TTS: edge-tts (nếu mạng cho phép) + piper (offline, dự phòng). Google TTS không cần cài gì.
+# 3. TTS: edge-tts (nếu mạng cho phép). Google TTS (dự phòng) không cần cài gì.
 pip_install() { python3 -m pip install -q -U "$@" >&2 || python3 -m pip install -q -U --break-system-packages "$@" >&2; }
-python3 -c "import edge_tts, piper" 2>/dev/null || pip_install edge-tts piper-tts || log "pip install lỗi"
+python3 -c "import edge_tts" 2>/dev/null || pip_install edge-tts || log "pip install lỗi"
 
 # 4. Chrome cho HyperFrames (chạy nền, không chặn session)
 if [ ! -f .claude/.hf-browser-ok ]; then
@@ -43,7 +43,7 @@ def ok(u):
         return True
     except Exception:
         return False
-print("edge" if ok("https://speech.platform.bing.com/") else "google" if ok("https://translate.googleapis.com/") else "piper")
+print("edge" if ok("https://speech.platform.bing.com/") else "google" if ok("https://translate.googleapis.com/") else "KHÔNG CÓ (kiểm tra mạng)")
 EOF
 )
 echo "Môi trường video cloud: $(command -v ffprobe >/dev/null && echo ffmpeg OK || echo THIẾU ffmpeg); giọng đọc: $tts; Chrome HyperFrames đang tải nền (log /tmp/hf-browser.log)."

@@ -5,8 +5,8 @@
 Provider (đọc từ script.json voice.provider, mặc định auto):
   edge    Microsoft Edge TTS - giọng tự nhiên nhất, mốc từ chính xác. Cần mạng tới speech.platform.bing.com.
   google  Google Translate TTS qua translate.googleapis.com (thuộc *.googleapis.com, được phép trong cloud session mặc định).
-  piper   Offline, model tải 1 lần từ GitHub releases (rhasspy/piper). Chất lượng thấp hơn.
-  auto    edge nếu kết nối được, không thì google, không thì piper.
+  piper   Offline, model tải 1 lần từ GitHub releases (rhasspy/piper). Tiếng Việt phát âm sai nhiều: chỉ khi không có mạng.
+  auto    edge nếu kết nối được, không thì google.
 
 Ghi audio/voice/<id>.mp3|wav và audio/voice/<id>.words.json ([{text,start,end}] giây).
 Với google/piper, mốc từ = mốc từng câu (đo chính xác) chia theo độ dài chữ trong câu.
@@ -60,7 +60,8 @@ def pick_provider(lang):
             print("  edge-tts chưa cài (python -m pip install -U edge-tts), bỏ qua")
     if reachable("https://translate.googleapis.com/"):
         return "google"
-    return "piper"
+    # Piper không vào auto: giọng tiếng Việt của nó phát âm sai nhiều (đo bằng Whisper).
+    sys.exit("Không kết nối được edge-tts lẫn Google TTS. Kiểm tra mạng, hoặc chạy --provider piper (offline, chất lượng kém).")
 
 
 def rate_factor(rate):

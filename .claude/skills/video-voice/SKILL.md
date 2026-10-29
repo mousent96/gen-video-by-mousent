@@ -13,13 +13,13 @@ description: Tạo giọng đọc (TTS) cho từng cảnh từ script.json, đo 
 python .claude/skills/video-pipeline/scripts/tts.py productions/<slug> [--provider auto|edge|google|piper]
 ```
 
-Ba provider miễn phí, đều có tiếng Việt; `auto` (mặc định) chọn cái đầu tiên dùng được:
+Ba provider miễn phí có tiếng Việt; `auto` (mặc định) chọn edge, không được thì google:
 
 | Provider | Chất lượng | Cần | Mốc từ |
 | --- | --- | --- | --- |
-| `edge` | tự nhiên nhất (giọng Neural HoaiMy/NamMinh) | mạng tới `speech.platform.bing.com` — **bị chặn** trong cloud session mạng mặc định | chính xác từng từ |
-| `google` | rõ, hơi máy | mạng tới `translate.googleapis.com` (được phép trong cloud mặc định), ffmpeg | chính xác từng câu, chia trong câu theo độ dài chữ |
-| `piper` | kém nhất, 16 kHz | `pip install piper-tts`; model tải 1 lần từ GitHub releases (~58 MB) | như google |
+| `edge` | tự nhiên nhất (giọng Neural HoaiMy/NamMinh), Whisper nghe lại gần đúng hết | mạng tới `speech.platform.bing.com` — **bị chặn** trong cloud session mạng mặc định | chính xác từng từ |
+| `google` | rõ, hơi máy; Whisper nghe lại đúng từng chữ | mạng tới `translate.googleapis.com` (được phép trong cloud mặc định), ffmpeg | chính xác từng câu, chia trong câu theo độ dài chữ |
+| `piper` (không vào auto) | **phát âm sai nhiều** ("video ngắn" → "bên yêu nắng"), 16 kHz — chỉ khi hoàn toàn không có mạng | `pip install piper-tts`; model tải 1 lần từ GitHub releases (~58 MB) | như google |
 
 - Script ghi provider/giọng thực tế vào `script.json`; báo người dùng provider nào đã dùng. Khi `auto` không chọn được edge (cloud), nói rõ giọng đang là Google và edge cần mở mạng `speech.platform.bing.com`.
 - Đọc `voice.name`, `voice.rate` từ `script.json`; chỉ tạo lại cảnh có lời thoại đổi (cache theo hash). `--force` để tạo lại hết, `--only s03,s05` cho vài cảnh. `rate` (ví dụ `+10%`) dùng được cho cả 3 provider.

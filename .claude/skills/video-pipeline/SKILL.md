@@ -60,7 +60,7 @@ Nếu người dùng nói "tự làm hết", "không cần hỏi", "auto" → gh
 
 Nhận biết: biến môi trường `CLAUDE_CODE_REMOTE=true`. Khi đó:
 
-1. **Trước bước đầu tiên**: nếu `ffprobe` chưa có, `python3 -c "import edge_tts, piper"` lỗi, hoặc `hyperframes/skills` rỗng → chạy `bash scripts/cloud-setup.sh` (1–3 phút) rồi `python3 .claude/skills/video-pipeline/scripts/check_env.py`. Không cần đổi cấu hình mạng của environment: GSAP được đóng gói từ npm, giọng đọc tự dùng Google TTS (`translate.googleapis.com`) khi edge-tts bị chặn. Báo người dùng provider giọng đã dùng; nếu họ muốn giọng edge tự nhiên hơn thì khi đó mới hướng dẫn mở mạng `speech.platform.bing.com` (Custom network access).
+1. **Trước bước đầu tiên**: nếu `ffprobe` chưa có, `python3 -c "import edge_tts"` lỗi, hoặc `hyperframes/skills` rỗng → chạy `bash scripts/cloud-setup.sh` (1–3 phút) rồi `python3 .claude/skills/video-pipeline/scripts/check_env.py`. Không cần đổi cấu hình mạng của environment: GSAP được đóng gói từ npm, giọng đọc tự dùng Google TTS (`translate.googleapis.com`) khi edge-tts bị chặn. Báo người dùng provider giọng đã dùng; nếu họ muốn giọng edge tự nhiên hơn thì khi đó mới hướng dẫn mở mạng `speech.platform.bing.com` (Custom network access).
 2. **Người dùng đang trên điện thoại**: tin nhắn ngắn. Checkpoint kịch bản gửi bảng gọn (# | lời thoại | chữ trên màn hình), tối đa ~10 dòng.
 3. **Không có Studio preview** (localhost của VM không mở được từ điện thoại): thay checkpoint "xem preview" bằng render bản nháp (`--quality draft` / `--crf=28 --scale=0.5`), push lên nhánh (mục Giao bên dưới) và gửi link, kèm 2–3 ảnh snapshot đã tự xem. Người dùng góp ý → sửa → render lại.
 4. **Giao file**: VM không cho tải trực tiếp. Sau khi `verify_render.py` PASS:

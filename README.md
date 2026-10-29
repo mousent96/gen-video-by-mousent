@@ -69,13 +69,13 @@ Không cần sửa cấu hình mạng của cloud environment — mọi thứ t�
 
 1. Push repo lên GitHub, cài Claude GitHub App cho repo (https://github.com/apps/claude).
 2. App Claude → tab **Code** → chọn repo → chat: *"làm video 9:16 dài 30 giây về …"*.
-3. Lần đầu mỗi session Claude chạy `scripts/cloud-setup.sh` (1–3 phút: ffmpeg, font, Chrome, piper), gửi kịch bản để bạn duyệt, rồi push MP4 lên một nhánh và gửi link GitHub để xem trên điện thoại.
+3. Lần đầu mỗi session Claude chạy `scripts/cloud-setup.sh` (1–3 phút: ffmpeg, font, Chrome), gửi kịch bản để bạn duyệt, rồi push MP4 lên một nhánh và gửi link GitHub để xem trên điện thoại.
 
 Khác với chạy trên máy:
 
 | | Máy / GitHub Actions | Cloud session (mạng mặc định) |
 | --- | --- | --- |
-| Giọng đọc | edge-tts (Neural, tự nhiên nhất) | Google TTS (rõ, hơi máy); Piper offline dự phòng |
+| Giọng đọc | edge-tts (Neural, tự nhiên nhất) | Google TTS (rõ, hơi máy) |
 | GSAP | đóng gói từ npm vào project | như bên trái |
 | Nhạc HeyGen, logo theSVG, SFX Openverse | được | không; dùng 21 SFX có sẵn, logo từ GitHub/favicon |
 | Preview Studio | có | không — xem bản nháp qua link GitHub |
