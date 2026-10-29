@@ -14,7 +14,7 @@ Hai repo trên được gắn làm **git submodule** (ghim commit) để skill �
   video-pipeline/        điều phối A→Z + scripts/ (production, TTS, timeline, scaffold, verify)
   video-setup/           kiểm tra & cài môi trường
   video-script/          kịch bản → script.json
-  video-voice/           giọng đọc edge-tts (có tiếng Việt) → timeline.json, captions.srt
+  video-voice/           giọng đọc edge-tts / Google / Piper (tiếng Việt) → timeline.json, captions.srt
   video-assets/          nhạc, SFX, logo, icon, ảnh
   video-build-hyperframes/
   video-build-remotion/
@@ -65,17 +65,19 @@ git add hyperframes remotion && git commit -m "chore: bump upstream"
 
 ## Dùng từ app Claude trên điện thoại
 
+Không cần sửa cấu hình mạng của cloud environment — mọi thứ tải từ các domain được phép mặc định (apt Ubuntu, PyPI, npm, GitHub, Google).
+
 1. Push repo lên GitHub, cài Claude GitHub App cho repo (https://github.com/apps/claude).
-2. Trên claude.ai/code → Cloud environment → **Network access**: chọn **Custom**, tick *Also include default list*, thêm:
-   ```
-   speech.platform.bing.com
-   cdn.jsdelivr.net
-   ```
-   (hoặc chọn **Full**). Không có 2 domain này thì giọng đọc edge-tts và HyperFrames sẽ lỗi.
-3. (Tuỳ chọn, cho session khởi động nhanh) dán vào **Setup script** của environment:
-   ```bash
-   apt-get update && apt-get install -y ffmpeg fonts-noto-core libnss3 libgbm1 libxkbcommon0 libasound2t64
-   pip install -U edge-tts
-   ```
-4. App Claude → tab **Code** → chọn repo → chat: *"làm video 9:16 dài 30 giây về …"*.
-   Claude tự chạy `scripts/cloud-setup.sh` nếu thiếu tool, gửi kịch bản để bạn duyệt, rồi push MP4 lên một nhánh và gửi link GitHub để xem trên điện thoại.
+2. App Claude → tab **Code** → chọn repo → chat: *"làm video 9:16 dài 30 giây về …"*.
+3. Lần đầu mỗi session Claude chạy `scripts/cloud-setup.sh` (1–3 phút: ffmpeg, font, Chrome, piper), gửi kịch bản để bạn duyệt, rồi push MP4 lên một nhánh và gửi link GitHub để xem trên điện thoại.
+
+Khác với chạy trên máy:
+
+| | Máy / GitHub Actions | Cloud session (mạng mặc định) |
+| --- | --- | --- |
+| Giọng đọc | edge-tts (Neural, tự nhiên nhất) | Google TTS (rõ, hơi máy); Piper offline dự phòng |
+| GSAP | đóng gói từ npm vào project | như bên trái |
+| Nhạc HeyGen, logo theSVG, SFX Openverse | được | không; dùng 21 SFX có sẵn, logo từ GitHub/favicon |
+| Preview Studio | có | không — xem bản nháp qua link GitHub |
+
+Muốn giọng edge trên cloud: Cloud environment → **Network access** → **Custom** (giữ *default list*) và thêm `speech.platform.bing.com`.

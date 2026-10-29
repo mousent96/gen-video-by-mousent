@@ -29,6 +29,8 @@ npx hyperframes media-use resolve --type <type> --intent "<mô tả>" --project 
 | **Ảnh minh hoạ chung** | ưu tiên vẽ bằng HTML/SVG/CSS ngay trong bản dựng (biểu đồ, sơ đồ, chữ động, hình khối); ảnh stock/AI chỉ khi người dùng muốn và có provider |
 | **Avatar người dẫn / giọng HeyGen** | trả phí — hỏi trước; công thức trong `hyperframes/skills/media-use/references/operations.md` |
 
+**Cloud session mạng mặc định** (`CLAUDE_CODE_REMOTE=true`): theSVG (jsdelivr), Openverse và HeyGen bị chặn. Dùng 21 SFX có sẵn offline (`resolve --type sfx --local-only`), logo từ GitHub avatar / favicon hoặc file người dùng commit vào `productions/<slug>/source/`, icon SVG lấy từ npm (`npm pack lucide-static` rồi lấy file trong `icons/`). Không có nhạc nền thì làm không nhạc và nói rõ.
+
 ## `assets.json`
 
 ```json

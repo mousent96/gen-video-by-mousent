@@ -1,6 +1,6 @@
 ---
 name: video-voice
-description: Tạo giọng đọc (TTS) cho từng cảnh từ script.json, đo thời lượng, dựng timeline.json và phụ đề captions.srt có mốc từng từ. Hỗ trợ tiếng Việt miễn phí qua edge-tts, Kokoro offline (tiếng Anh), HeyGen/ElevenLabs (trả phí), hoặc file thu âm sẵn. Dùng ở bước 3 của /video-pipeline hoặc khi người dùng nhờ "tạo giọng đọc", "voiceover", "lồng tiếng", "đổi giọng", "làm phụ đề".
+description: Tạo giọng đọc (TTS) cho từng cảnh từ script.json, đo thời lượng, dựng timeline.json và phụ đề captions.srt có mốc từng từ. Tiếng Việt miễn phí qua edge-tts, Google TTS hoặc Piper offline (tự chọn theo mạng), Kokoro (tiếng Anh), HeyGen/ElevenLabs (trả phí), hoặc file thu âm sẵn. Dùng ở bước 3 của /video-pipeline hoặc khi người dùng nhờ "tạo giọng đọc", "voiceover", "lồng tiếng", "đổi giọng", "làm phụ đề".
 ---
 
 # Giọng đọc + timeline
@@ -9,14 +9,20 @@ description: Tạo giọng đọc (TTS) cho từng cảnh từ script.json, đo 
 
 ## 1. Tạo giọng
 
-**edge-tts (mặc định, miễn phí, cần mạng, có tiếng Việt + mốc từng từ):**
-
 ```bash
-python .claude/skills/video-pipeline/scripts/tts_edge.py productions/<slug>
+python .claude/skills/video-pipeline/scripts/tts.py productions/<slug> [--provider auto|edge|google|piper]
 ```
 
-- Đọc `voice.name`, `voice.rate`, `voice.pitch` từ `script.json`; chỉ tạo lại cảnh có lời thoại đổi (cache theo hash). `--force` để tạo lại hết, `--only s03,s05` cho vài cảnh.
-- Lỗi kết nối / timeout tới `speech.platform.bing.com` trên cloud = environment chặn mạng: báo người dùng cho phép domain đó (xem `/video-pipeline` → Chạy trên cloud).
+Ba provider miễn phí, đều có tiếng Việt; `auto` (mặc định) chọn cái đầu tiên dùng được:
+
+| Provider | Chất lượng | Cần | Mốc từ |
+| --- | --- | --- | --- |
+| `edge` | tự nhiên nhất (giọng Neural HoaiMy/NamMinh) | mạng tới `speech.platform.bing.com` — **bị chặn** trong cloud session mạng mặc định | chính xác từng từ |
+| `google` | rõ, hơi máy | mạng tới `translate.googleapis.com` (được phép trong cloud mặc định), ffmpeg | chính xác từng câu, chia trong câu theo độ dài chữ |
+| `piper` | kém nhất, 16 kHz | `pip install piper-tts`; model tải 1 lần từ GitHub releases (~58 MB) | như google |
+
+- Script ghi provider/giọng thực tế vào `script.json`; báo người dùng provider nào đã dùng. Khi `auto` không chọn được edge (cloud), nói rõ giọng đang là Google và edge cần mở mạng `speech.platform.bing.com`.
+- Đọc `voice.name`, `voice.rate` từ `script.json`; chỉ tạo lại cảnh có lời thoại đổi (cache theo hash). `--force` để tạo lại hết, `--only s03,s05` cho vài cảnh. `rate` (ví dụ `+10%`) dùng được cho cả 3 provider.
 - Dịch vụ edge-tts hay từ chối ngẫu nhiên khi có `rate`/`pitch` ("No audio was received"): script thử lại 3 lần rồi đọc ở tốc độ mặc định và in `warn`. Chỉ dùng `rate` (ví dụ `+10%`), tránh `pitch`. Thấy `warn` thì báo người dùng.
 - Liệt kê giọng: `python -m edge_tts --list-voices | findstr vi-VN` (PowerShell) hoặc `| grep vi-VN`.
 - Nghe thử 1 câu trước khi chạy cả kịch bản nếu người dùng kén giọng.

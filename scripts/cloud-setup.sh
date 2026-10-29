@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# SessionStart hook: chuẩn bị môi trường video khi chạy Claude Code trên cloud
-# (claude.ai/code, app điện thoại). Trên máy local thoát ngay.
-# Cần network access của environment cho phép thêm: speech.platform.bing.com, cdn.jsdelivr.net (xem README).
+# Chuẩn bị môi trường video khi chạy Claude Code trên cloud (claude.ai/code, app điện thoại).
+# Chạy được với network access mặc định (Trusted): mọi thứ tải từ apt Ubuntu, PyPI, npm, GitHub, Google.
+# Trên máy local thoát ngay.
 [ "${CLAUDE_CODE_REMOTE:-}" = "true" ] || exit 0
 cd "${CLAUDE_PROJECT_DIR:-$(dirname "$0")/..}" || exit 0
 
@@ -23,9 +23,9 @@ if ! command -v ffprobe >/dev/null 2>&1; then
   $SUDO apt-get install -y -qq libasound2t64 >&2 2>/dev/null || $SUDO apt-get install -y -qq libasound2 >&2 || true
 fi
 
-# 3. edge-tts
-python3 -c "import edge_tts" 2>/dev/null || python3 -m pip install -q -U edge-tts >&2 \
-  || python3 -m pip install -q -U --break-system-packages edge-tts >&2 || log "pip install edge-tts lỗi"
+# 3. TTS: edge-tts (nếu mạng cho phép) + piper (offline, dự phòng). Google TTS không cần cài gì.
+pip_install() { python3 -m pip install -q -U "$@" >&2 || python3 -m pip install -q -U --break-system-packages "$@" >&2; }
+python3 -c "import edge_tts, piper" 2>/dev/null || pip_install edge-tts piper-tts || log "pip install lỗi"
 
 # 4. Chrome cho HyperFrames (chạy nền, không chặn session)
 if [ ! -f .claude/.hf-browser-ok ]; then
@@ -33,12 +33,18 @@ if [ ! -f .claude/.hf-browser-ok ]; then
    npx -y hyperframes browser ensure >/tmp/hf-browser.log 2>&1 && touch .claude/.hf-browser-ok) &
 fi
 
-# 5. Kiểm tra mạng tới edge-tts (thường bị chặn ở mức Trusted)
-if ! python3 - <<'EOF' 2>/dev/null
-import socket; socket.create_connection(("speech.platform.bing.com", 443), timeout=5)
+# 5. Provider giọng đọc mà tts.py --provider auto sẽ chọn
+tts=$(python3 - <<'EOF'
+import urllib.request, urllib.error
+def ok(u):
+    try:
+        urllib.request.urlopen(u, timeout=6); return True
+    except urllib.error.HTTPError:
+        return True
+    except Exception:
+        return False
+print("edge" if ok("https://speech.platform.bing.com/") else "google" if ok("https://translate.googleapis.com/") else "piper")
 EOF
-then
-  echo "CẢNH BÁO: không kết nối được speech.platform.bing.com — giọng đọc edge-tts sẽ lỗi. Đổi network access của cloud environment sang Custom (thêm speech.platform.bing.com, cdn.jsdelivr.net) hoặc Full."
-fi
-echo "Môi trường video cloud: $(command -v ffprobe >/dev/null && echo ffmpeg OK || echo THIẾU ffmpeg); Chrome HyperFrames đang tải nền (log /tmp/hf-browser.log)."
+)
+echo "Môi trường video cloud: $(command -v ffprobe >/dev/null && echo ffmpeg OK || echo THIẾU ffmpeg); giọng đọc: $tts; Chrome HyperFrames đang tải nền (log /tmp/hf-browser.log)."
 exit 0
