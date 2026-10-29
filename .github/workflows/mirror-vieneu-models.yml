@@ -45,6 +45,7 @@ jobs:
           EOF
           # SDK hỏi revision "main": trỏ refs/main về đúng snapshot đã ghim để chạy offline.
           cd "$HF_HOME/hub"
+          mkdir -p "models--${VIENEU_REPO/\//--}/refs" "models--${CODEC_REPO/\//--}/refs"
           echo -n "$VIENEU_REV" > "models--${VIENEU_REPO/\//--}/refs/main"
           echo -n "$CODEC_REV" > "models--${CODEC_REPO/\//--}/refs/main"
           tar -czf "$RUNNER_TEMP/$ASSET" "models--${VIENEU_REPO/\//--}" "models--${CODEC_REPO/\//--}"
