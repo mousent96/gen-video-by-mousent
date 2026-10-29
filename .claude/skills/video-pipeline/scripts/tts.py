@@ -1,15 +1,18 @@
 """Tạo giọng đọc từng cảnh, kèm mốc thời gian từng từ.
 
-  python tts.py productions/<slug> [--provider auto|edge|google|piper] [--voice <tên>] [--force] [--only s01,s03]
+  python tts.py productions/<slug> [--provider auto|vieneu|edge|google|piper] [--voice <tên>] [--force] [--only s01,s03]
+  python tts.py --list-voices vieneu
 
 Provider (đọc từ script.json voice.provider, mặc định auto):
+  vieneu  VieNeu-TTS v3 Turbo (https://github.com/pnnbao97/VieNeu-TTS) - chạy local trên CPU, 25 giọng Việt, 48 kHz.
+          Model ~580 MB lấy từ HuggingFace, hoặc từ GitHub release của repo này khi HuggingFace bị chặn (cloud-setup.sh).
   edge    Microsoft Edge TTS - giọng tự nhiên nhất, mốc từ chính xác. Cần mạng tới speech.platform.bing.com.
   google  Google Translate TTS qua translate.googleapis.com (thuộc *.googleapis.com, được phép trong cloud session mặc định).
   piper   Offline, model tải 1 lần từ GitHub releases (rhasspy/piper). Tiếng Việt phát âm sai nhiều: chỉ khi không có mạng.
-  auto    edge nếu kết nối được, không thì google.
+  auto    vieneu (tiếng Việt/Anh, khi đã cài và có model), không thì edge, không thì google.
 
 Ghi audio/voice/<id>.mp3|wav và audio/voice/<id>.words.json ([{text,start,end}] giây).
-Với google/piper, mốc từ = mốc từng câu (đo chính xác) chia theo độ dài chữ trong câu.
+Với vieneu/google/piper, mốc từ = mốc từng câu (đo chính xác) chia theo độ dài chữ trong câu.
 """
 import argparse
 import asyncio
@@ -32,7 +35,10 @@ UA = {"User-Agent": "Mozilla/5.0"}
 DEFAULT_VOICES = {
     "edge": {"vi": "vi-VN-HoaiMyNeural", "en": "en-US-AvaMultilingualNeural"},
     "piper": {"vi": "vi-25hours-single-low", "en": "en-us-lessac-medium"},
+    "vieneu": {"vi": "Hải Đăng", "en": "Hải Đăng"},
 }
+VIENEU_REPO = "pnnbao-ump/VieNeu-TTS-v3-Turbo"
+VIENEU_MARKER = "onnx_update/vieneu_backbone_shared.data"
 PIPER_RELEASE = "https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-{name}.tar.gz"
 CACHE = Path.home() / ".cache" / "gen-video"
 
@@ -51,7 +57,32 @@ def reachable(url):
         return False
 
 
+def vieneu_status():
+    """(sẵn sàng?, lý do). Model đã có trong HF cache thì chạy offline (cloud chặn huggingface.co)."""
+    try:
+        import importlib.util
+        if importlib.util.find_spec("vieneu") is None:
+            return False, "chưa cài (pip install vieneu)"
+        from huggingface_hub import constants
+        cached = list(Path(constants.HF_HUB_CACHE).glob(
+            f"models--{VIENEU_REPO.replace('/', '--')}/snapshots/*/{VIENEU_MARKER}"))
+    except Exception as exc:  # noqa: BLE001
+        return False, str(exc)
+    if cached:
+        if not reachable("https://huggingface.co/"):
+            os.environ["HF_HUB_OFFLINE"] = "1"
+        return True, "model có sẵn"
+    if reachable("https://huggingface.co/"):
+        return True, "sẽ tải model từ HuggingFace (~580 MB, một lần)"
+    return False, "chưa có model và không vào được HuggingFace (chạy scripts/cloud-setup.sh)"
+
+
 def pick_provider(lang):
+    if lang in ("vi", "en"):
+        ok, why = vieneu_status()
+        if ok:
+            return "vieneu"
+        print(f"  vieneu: {why}, bỏ qua")
     if reachable("https://speech.platform.bing.com/"):
         try:
             import edge_tts  # noqa: F401
@@ -69,10 +100,10 @@ def rate_factor(rate):
     return 1 + int(m.group(1)) / 100 if m else 1.0
 
 
-def split_chunks(text, limit=180):
+def split_chunks(text, limit=180, seps=".!?…;:,"):
     """Cắt theo câu / dấu phẩy, mỗi đoạn <= limit ký tự (giới hạn của Google TTS)."""
     parts, cur = [], ""
-    for sent in re.split(r"(?<=[.!?…;:,])\s+", text.strip()):
+    for sent in re.split(rf"(?<=[{re.escape(seps)}])\s+", text.strip()):
         while len(sent) > limit:
             cut = sent.rfind(" ", 0, limit)
             cut = cut if cut > 0 else limit
@@ -244,16 +275,69 @@ def run_piper(text, voice_name, rate, out_base):
     return out, words
 
 
+# ---------- vieneu ----------
+_VIENEU = None
+
+
+def vieneu_engine():
+    global _VIENEU
+    if _VIENEU is None:
+        ok, why = vieneu_status()
+        if not ok:
+            sys.exit(f"VieNeu không dùng được: {why}")
+        from vieneu import Vieneu
+        print("  nạp VieNeu-TTS v3 Turbo...")
+        _VIENEU = Vieneu()
+    return _VIENEU
+
+
+def run_vieneu(text, voice_name, rate, out_base):
+    import numpy as np
+    import soundfile as sf
+    v = vieneu_engine()
+    sr, gap = 48000, 0.12
+    pieces, words, t = [], [], 0.0
+    # Chỉ cắt theo câu (không theo dấu phẩy) để giữ ngữ điệu tự nhiên.
+    for chunk in split_chunks(text, limit=260, seps=".!?…"):
+        audio = np.asarray(v.infer(chunk, voice=voice_name), dtype=np.float32).reshape(-1)
+        d = len(audio) / sr
+        words += spread_words(chunk, t + 0.05, t + d - 0.08)
+        pieces += [audio, np.zeros(int(gap * sr), np.float32)]
+        t += d + gap
+    out = out_base.with_suffix(".wav")
+    sf.write(str(out), np.concatenate(pieces), sr, subtype="PCM_16")
+    factor = rate_factor(rate)
+    if abs(factor - 1) > 0.001:
+        need_ffmpeg()
+        tmp = out.with_name(out.stem + ".rate.wav")
+        subprocess.run(["ffmpeg", "-y", "-v", "error", "-i", str(out), "-af", f"atempo={factor}", str(tmp)], check=True)
+        tmp.replace(out)
+        words = [{"text": w["text"], "start": round(w["start"] / factor, 3), "end": round(w["end"] / factor, 3)} for w in words]
+    return out, words
+
+
+def list_voices(provider):
+    if provider != "vieneu":
+        sys.exit("Chỉ liệt kê được giọng vieneu; giọng edge: python -m edge_tts --list-voices")
+    for label, vid in vieneu_engine().list_preset_voices():
+        print(f"{vid:<16} {label}")
+
+
 async def main():
     sys.stdout.reconfigure(encoding="utf-8")
     sys.stderr.reconfigure(encoding="utf-8")
     p = argparse.ArgumentParser()
-    p.add_argument("production")
-    p.add_argument("--provider", choices=["auto", "edge", "google", "piper"])
+    p.add_argument("production", nargs="?")
+    p.add_argument("--provider", choices=["auto", "vieneu", "edge", "google", "piper"])
+    p.add_argument("--list-voices", metavar="PROVIDER")
     p.add_argument("--voice", help="ghi đè voice.name trong script.json")
     p.add_argument("--force", action="store_true")
     p.add_argument("--only", default="")
     args = p.parse_args()
+    if args.list_voices:
+        return list_voices(args.list_voices)
+    if not args.production:
+        p.error("thiếu đường dẫn production")
 
     base = Path(args.production)
     script_path = base / "script.json"
@@ -272,6 +356,8 @@ async def main():
         name = DEFAULT_VOICES["piper"].get(lang, DEFAULT_VOICES["piper"]["en"])
     elif provider == "google":
         name = f"google-{lang}"
+    elif provider == "vieneu" and (not name or re.match(r"^([a-z]{2}-[A-Z]{2}-|google-|vi-\d|en-us-)", name)):
+        name = DEFAULT_VOICES["vieneu"].get(lang, DEFAULT_VOICES["vieneu"]["vi"])
     rate, pitch = vcfg.get("rate", "+0%"), vcfg.get("pitch", "+0Hz")
     if provider == "edge":
         try:
@@ -303,6 +389,8 @@ async def main():
                 path, words = await run_edge(text, name, rate, pitch, out / sid, sid)
             elif provider == "google":
                 path, words = run_google(text, lang, rate, out / sid, tmp)
+            elif provider == "vieneu":
+                path, words = run_vieneu(text, name, rate, out / sid)
             else:
                 path, words = run_piper(text, name, rate, out / sid)
         except RuntimeError as exc:

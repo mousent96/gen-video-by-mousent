@@ -1,6 +1,6 @@
 ---
 name: video-voice
-description: Tạo giọng đọc (TTS) cho từng cảnh từ script.json, đo thời lượng, dựng timeline.json và phụ đề captions.srt có mốc từng từ. Tiếng Việt miễn phí qua edge-tts, Google TTS hoặc Piper offline (tự chọn theo mạng), Kokoro (tiếng Anh), HeyGen/ElevenLabs (trả phí), hoặc file thu âm sẵn. Dùng ở bước 3 của /video-pipeline hoặc khi người dùng nhờ "tạo giọng đọc", "voiceover", "lồng tiếng", "đổi giọng", "làm phụ đề".
+description: Tạo giọng đọc (TTS) cho từng cảnh từ script.json, đo thời lượng, dựng timeline.json và phụ đề captions.srt có mốc từng từ. Tiếng Việt miễn phí: VieNeu-TTS (mặc định, chạy local, 25 giọng), edge-tts, Google TTS (tự chọn theo môi trường), Kokoro (tiếng Anh), HeyGen/ElevenLabs (trả phí), hoặc file thu âm sẵn. Dùng ở bước 3 của /video-pipeline hoặc khi người dùng nhờ "tạo giọng đọc", "voiceover", "lồng tiếng", "đổi giọng", "làm phụ đề".
 ---
 
 # Giọng đọc + timeline
@@ -10,19 +10,22 @@ description: Tạo giọng đọc (TTS) cho từng cảnh từ script.json, đo 
 ## 1. Tạo giọng
 
 ```bash
-python .claude/skills/video-pipeline/scripts/tts.py productions/<slug> [--provider auto|edge|google|piper]
+python .claude/skills/video-pipeline/scripts/tts.py productions/<slug> [--provider auto|vieneu|edge|google|piper]
 ```
 
-Ba provider miễn phí có tiếng Việt; `auto` (mặc định) chọn edge, không được thì google:
+Provider miễn phí có tiếng Việt; `auto` (mặc định) chọn vieneu → edge → google, cái đầu tiên dùng được:
 
 | Provider | Chất lượng | Cần | Mốc từ |
 | --- | --- | --- | --- |
+| `vieneu` (mặc định) | VieNeu-TTS v3 Turbo: 25 giọng Bắc/Trung/Nam, 48 kHz; Whisper nghe lại đúng như Google | `pip install --no-deps vieneu==3.8.3` + `scripts/requirements-vieneu.txt`; model ~580 MB (HuggingFace, hoặc GitHub Release `vieneu-models` khi ở cloud); chạy CPU ~2× thời gian thực | chính xác từng câu, chia trong câu theo độ dài chữ |
 | `edge` | tự nhiên nhất (giọng Neural HoaiMy/NamMinh), Whisper nghe lại gần đúng hết | mạng tới `speech.platform.bing.com` — **bị chặn** trong cloud session mạng mặc định | chính xác từng từ |
 | `google` | rõ, hơi máy; Whisper nghe lại đúng từng chữ | mạng tới `translate.googleapis.com` (được phép trong cloud mặc định), ffmpeg | chính xác từng câu, chia trong câu theo độ dài chữ |
 | `piper` (không vào auto) | **phát âm sai nhiều** ("video ngắn" → "bên yêu nắng"), 16 kHz — chỉ khi hoàn toàn không có mạng | `pip install piper-tts`; model tải 1 lần từ GitHub releases (~58 MB) | như google |
 
-- Script ghi provider/giọng thực tế vào `script.json`; báo người dùng provider nào đã dùng. Khi `auto` không chọn được edge (cloud), nói rõ giọng đang là Google và edge cần mở mạng `speech.platform.bing.com`.
-- Đọc `voice.name`, `voice.rate` từ `script.json`; chỉ tạo lại cảnh có lời thoại đổi (cache theo hash). `--force` để tạo lại hết, `--only s03,s05` cho vài cảnh. `rate` (ví dụ `+10%`) dùng được cho cả 3 provider.
+- Script ghi provider/giọng thực tế vào `script.json`; báo người dùng provider nào đã dùng. `auto` in lý do khi bỏ qua vieneu (chưa cài / chưa có model) — khi đó nói rõ giọng đang là edge/Google.
+- **Giọng VieNeu** (`voice.name`, mặc định `Hải Đăng`): ⭐ Adam bựa (nam Bắc, tự nhiên), Trúc Ly (nữ Bắc), Thiện Minh (nam Bắc, kể chuyện), Mai Anh (nữ Bắc, tin tức), Hải Đăng (nam Bắc), Thùy Dung (nữ Nam, tin tức), Thiền Tâm Đức (nam Bắc, kể chuyện), Ngọc Huyền (nữ Bắc), Quang Sơn (nam Trung), Ngọc Trân (nữ Trung); thêm 15 giọng khác. Danh sách đầy đủ: `python .claude/skills/video-pipeline/scripts/tts.py --list-voices vieneu`. Video quảng cáo/TikTok hợp Adam bựa, Trúc Ly; tin tức hợp Mai Anh, Thùy Dung; kể chuyện hợp Thiện Minh. Whisper nghe Trúc Ly sai 2/30 từ trong phép thử — nghe lại khi dùng giọng này.
+- VieNeu đọc theo câu: câu quá dài (> 260 ký tự) bị cắt ở khoảng trắng, ngữ điệu kém hơn — viết câu ngắn. Biểu cảm thử nghiệm: `[cười]`, `[thở dài]` ngay trong `narration`.
+- Đọc `voice.name`, `voice.rate` từ `script.json`; chỉ tạo lại cảnh có lời thoại đổi (cache theo hash). `--force` để tạo lại hết, `--only s03,s05` cho vài cảnh. `rate` (ví dụ `+10%`) dùng được cho mọi provider.
 - Dịch vụ edge-tts hay từ chối ngẫu nhiên khi có `rate`/`pitch` ("No audio was received"): script thử lại 3 lần rồi đọc ở tốc độ mặc định và in `warn`. Chỉ dùng `rate` (ví dụ `+10%`), tránh `pitch`. Thấy `warn` thì báo người dùng.
 - Liệt kê giọng: `python -m edge_tts --list-voices | findstr vi-VN` (PowerShell) hoặc `| grep vi-VN`.
 - Nghe thử 1 câu trước khi chạy cả kịch bản nếu người dùng kén giọng.

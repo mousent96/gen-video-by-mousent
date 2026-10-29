@@ -1,0 +1,13 @@
+# VieNeu-TTS v3 Turbo trên CPU (ONNX), không kèm gradio (chỉ cần cho web UI).
+# Cài: python -m pip install --no-deps vieneu==3.8.3 && python -m pip install -r scripts/requirements-vieneu.txt
+# Đổi phiên bản vieneu thì cập nhật VIENEU_REV/CODEC_REV trong .github/workflows/mirror-vieneu-models.yml.
+sea-g2p>=0.9.1
+onnxruntime>=1.20.0
+numpy
+soundfile
+soxr
+kaldi-native-fbank>=1.20
+tokenizers>=0.20
+huggingface_hub
+PyYAML
+librosa>=0.11.0

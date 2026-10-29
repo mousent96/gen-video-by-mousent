@@ -14,7 +14,7 @@ Hai repo trên được gắn làm **git submodule** (ghim commit) để skill �
   video-pipeline/        điều phối A→Z + scripts/ (production, TTS, timeline, scaffold, verify)
   video-setup/           kiểm tra & cài môi trường
   video-script/          kịch bản → script.json
-  video-voice/           giọng đọc edge-tts / Google / Piper (tiếng Việt) → timeline.json, captions.srt
+  video-voice/           giọng đọc VieNeu-TTS (mặc định) / edge-tts / Google → timeline.json, captions.srt
   video-assets/          nhạc, SFX, logo, icon, ảnh
   video-build-hyperframes/
   video-build-remotion/
@@ -75,9 +75,11 @@ Khác với chạy trên máy:
 
 | | Máy / GitHub Actions | Cloud session (mạng mặc định) |
 | --- | --- | --- |
-| Giọng đọc | edge-tts (Neural, tự nhiên nhất) | Google TTS (rõ, hơi máy) |
+| Giọng đọc | VieNeu-TTS (25 giọng, local) | VieNeu-TTS, model lấy từ GitHub Release |
 | GSAP | đóng gói từ npm vào project | như bên trái |
 | Nhạc HeyGen, logo theSVG, SFX Openverse | được | không; dùng 21 SFX có sẵn, logo từ GitHub/favicon |
 | Preview Studio | có | không — xem bản nháp qua link GitHub |
 
-Muốn giọng edge trên cloud: Cloud environment → **Network access** → **Custom** (giữ *default list*) và thêm `speech.platform.bing.com`.
+**Model giọng đọc VieNeu trên cloud:** cloud chặn HuggingFace, nên workflow **Mirror VieNeu models** (`.github/workflows/mirror-vieneu-models.yml`) chép model (~580 MB, Apache-2.0) sang GitHub Release `vieneu-models` của repo; `cloud-setup.sh` tải từ đó. Workflow tự chạy khi file của nó thay đổi; chạy tay ở tab Actions nếu Release bị xoá. Repo private: cloud có thể không tải được Release — khi đó giọng tự chuyển sang Google TTS.
+
+Giọng đọc: [VieNeu-TTS](https://github.com/pnnbao97/VieNeu-TTS) của Phạm Nguyễn Ngọc Bảo (Apache-2.0).

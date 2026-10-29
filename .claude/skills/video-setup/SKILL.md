@@ -18,7 +18,8 @@ Mỗi dòng `MISSING` kèm lệnh cài. Bảng đầy đủ:
 | Node.js 22+ | cả 2 engine | `winget install OpenJS.NodeJS.LTS` |
 | FFmpeg + ffprobe | HyperFrames render/tts/transcribe, đo độ dài audio | `winget install Gyan.FFmpeg` rồi **mở terminal mới** để PATH cập nhật |
 | Python 3.10+ | script của pipeline, edge-tts | `winget install Python.Python.3.12` |
-| edge-tts | giọng đọc miễn phí (có tiếng Việt), kèm mốc thời gian từng từ | `python -m pip install -U edge-tts` |
+| VieNeu-TTS | giọng đọc tiếng Việt mặc định, chạy local | `python -m pip install --no-deps vieneu==3.8.3` rồi `python -m pip install -r scripts/requirements-vieneu.txt` (model ~580 MB tự tải lần đầu) |
+| edge-tts | giọng dự phòng (có tiếng Việt), kèm mốc thời gian từng từ | `python -m pip install -U edge-tts` |
 | Chrome headless (HyperFrames) | render HyperFrames | `npx hyperframes browser ensure` |
 | kokoro-onnx (tuỳ chọn) | giọng offline tiếng Anh qua `npx hyperframes tts` | `python -m pip install kokoro-onnx soundfile` |
 | heygen CLI (tuỳ chọn, trả phí) | avatar, giọng HeyGen, nhạc catalog | xem `hyperframes/skills/media-use/references/setup-providers.md` |

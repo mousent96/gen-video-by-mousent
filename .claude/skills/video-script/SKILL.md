@@ -26,7 +26,7 @@ description: Viết kịch bản video dạng bảng cảnh (lời thoại + ch�
 {
   "title": "…",
   "lang": "vi",
-  "voice": { "provider": "auto", "name": "vi-VN-HoaiMyNeural", "rate": "+0%" },
+  "voice": { "provider": "auto", "name": "Hải Đăng", "rate": "+0%" },
   "style": {
     "palette": ["#0B1020", "#F5F7FF", "#FF5A36"],
     "font": "Be Vietnam Pro",
@@ -50,8 +50,8 @@ description: Viết kịch bản video dạng bảng cảnh (lời thoại + ch�
 
 - `id` dạng `s01`, `s02`… — dùng làm tên file giọng và id cảnh khi dựng.
 - `duration`: để `null` khi có giọng đọc (bước voice tự tính); điền số giây khi cảnh không có lời.
-- `voice.provider`: để `auto` (bước voice tự chọn edge → google → piper theo mạng). `voice.name` là giọng edge; provider khác tự dùng giọng mặc định của nó.
-- `voice` mặc định theo ngôn ngữ: `vi` → edge `vi-VN-HoaiMyNeural` (nữ) / `vi-VN-NamMinhNeural` (nam); `en` → edge `en-US-AndrewMultilingualNeural` / `en-US-AvaMultilingualNeural`. Provider khác xem `/video-voice`.
+- `voice.provider`: để `auto` (bước voice tự chọn vieneu → edge → google). `voice.name` là giọng VieNeu (chọn theo phong cách, xem `/video-voice`); provider khác tự dùng giọng mặc định của nó.
+- Giọng edge (khi dùng `--provider edge`): `vi` → `vi-VN-HoaiMyNeural` (nữ) / `vi-VN-NamMinhNeural` (nam); `en` → edge `en-US-AndrewMultilingualNeural` / `en-US-AvaMultilingualNeural`. Provider khác xem `/video-voice`.
 - Font tiếng Việt phải có đủ dấu: Be Vietnam Pro, Inter, Montserrat, Roboto, Noto Sans (đều có trên Google Fonts — tải file về project khi dựng).
 
 ## Duyệt

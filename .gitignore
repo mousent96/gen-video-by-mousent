@@ -16,3 +16,4 @@ Thumbs.db
 
 # Đánh dấu của cloud-setup.sh
 .claude/.hf-browser-ok
+tts-samples/

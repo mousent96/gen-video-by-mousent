@@ -1,0 +1,66 @@
+name: Mirror VieNeu models
+
+# Chép model VieNeu-TTS v3 Turbo (bản CPU/ONNX) từ HuggingFace sang GitHub Release "vieneu-models"
+# của repo này. Cloud session của Claude Code (app điện thoại) chặn huggingface.co nhưng cho tải
+# từ GitHub, nên scripts/cloud-setup.sh lấy model ở đây. Cả hai model đều Apache-2.0.
+# Tự chạy khi file này thay đổi; chạy tay ở Actions → Mirror VieNeu models.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [.github/workflows/mirror-vieneu-models.yml]
+
+permissions:
+  contents: write
+
+env:
+  # Phải khớp với vieneu==3.8.3 (scripts/cloud-setup.sh, .github/actions/setup-video-env).
+  VIENEU_REPO: pnnbao-ump/VieNeu-TTS-v3-Turbo
+  VIENEU_REV: 61b85e3d937fbbacb387714180e8182823512523
+  CODEC_REPO: OpenMOSS-Team/MOSS-Audio-Tokenizer-Nano-ONNX
+  CODEC_REV: ceff0d0749bfb3fa2d61149794ec6feef0d1e1ae
+  TAG: vieneu-models
+  ASSET: vieneu-v3turbo-hf-cache.tar.gz
+
+jobs:
+  mirror:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download from HuggingFace
+        env:
+          HF_HOME: ${{ runner.temp }}/hf
+        run: |
+          python -m pip install -q huggingface_hub
+          python - <<'EOF'
+          import os
+          from huggingface_hub import snapshot_download
+          snapshot_download(os.environ["VIENEU_REPO"], revision=os.environ["VIENEU_REV"], allow_patterns=[
+              "config.json", "denoiser.onnx", "onnx_update/*"])
+          snapshot_download(os.environ["CODEC_REPO"], revision=os.environ["CODEC_REV"])
+          EOF
+          # SDK hỏi revision "main": trỏ refs/main về đúng snapshot đã ghim để chạy offline.
+          cd "$HF_HOME/hub"
+          echo -n "$VIENEU_REV" > "models--${VIENEU_REPO/\//--}/refs/main"
+          echo -n "$CODEC_REV" > "models--${CODEC_REPO/\//--}/refs/main"
+          tar -czf "$RUNNER_TEMP/$ASSET" "models--${VIENEU_REPO/\//--}" "models--${CODEC_REPO/\//--}"
+          ls -la "$RUNNER_TEMP/$ASSET"
+
+      - name: Publish release asset
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          notes="Model VieNeu-TTS v3 Turbo (ONNX, CPU) + MOSS-Audio-Tokenizer-Nano-ONNX, chép từ HuggingFace để dùng trong cloud session.
+          - https://huggingface.co/$VIENEU_REPO @ $VIENEU_REV (Apache-2.0)
+          - https://huggingface.co/$CODEC_REPO @ $CODEC_REV (Apache-2.0)
+          Giải nén vào \$HF_HOME/hub (mặc định ~/.cache/huggingface/hub)."
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" "$RUNNER_TEMP/$ASSET" --clobber
+          else
+            gh release create "$TAG" "$RUNNER_TEMP/$ASSET" --title "VieNeu-TTS models" --notes "$notes" --latest=false
+          fi

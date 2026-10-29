@@ -15,6 +15,7 @@ CHECKS = [
 ]
 PY_MODULES = [
     ("edge_tts", True, "python -m pip install -U edge-tts"),
+    ("vieneu", False, "python -m pip install --no-deps vieneu==3.8.3 && python -m pip install -r scripts/requirements-vieneu.txt  (giọng Việt mặc định, local)"),
     ("kokoro_onnx", False, "python -m pip install kokoro-onnx soundfile  (giọng offline tiếng Anh)"),
 ]
 

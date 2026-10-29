@@ -16,7 +16,15 @@ runs:
         sudo apt-get install -y -q ffmpeg fonts-noto-core fonts-noto-color-emoji fonts-dejavu-core
     - name: Python packages
       shell: bash
-      run: python -m pip install -q -U edge-tts
+      run: |
+        python -m pip install -q -U edge-tts
+        python -m pip install -q --no-deps vieneu==3.8.3
+        python -m pip install -q -r scripts/requirements-vieneu.txt
+    - name: VieNeu model cache
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/huggingface/hub
+        key: vieneu-3.8.3-v3turbo
     - name: Upstream skills (sparse)
       shell: bash
       run: bash scripts/fetch-upstream.sh
