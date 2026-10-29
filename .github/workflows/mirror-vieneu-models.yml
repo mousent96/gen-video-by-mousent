@@ -48,8 +48,11 @@ jobs:
           mkdir -p "models--${VIENEU_REPO/\//--}/refs" "models--${CODEC_REPO/\//--}/refs"
           echo -n "$VIENEU_REV" > "models--${VIENEU_REPO/\//--}/refs/main"
           echo -n "$CODEC_REV" > "models--${CODEC_REPO/\//--}/refs/main"
-          tar -czf "$RUNNER_TEMP/$ASSET" "models--${VIENEU_REPO/\//--}" "models--${CODEC_REPO/\//--}"
-          ls -la "$RUNNER_TEMP/$ASSET"
+          # Lấy cả hub/ (huggingface_hub mới để file lớn ở kho dùng chung hub/blobs/xx/…).
+          tar -czf "$RUNNER_TEMP/$ASSET" --exclude=.locks .
+          tar -tzvf "$RUNNER_TEMP/$ASSET" | sort -k3 -n | tail -5
+          size=$(stat -c %s "$RUNNER_TEMP/$ASSET"); echo "size=$size"
+          [ "$size" -gt 300000000 ] || { echo "::error::archive quá nhỏ ($size bytes) — thiếu file model"; exit 1; }
 
       - name: Publish release asset
         env:
