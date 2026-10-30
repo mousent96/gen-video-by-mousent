@@ -18,6 +18,15 @@ npx hyperframes render --quality delivery --output ../output/<slug>.mp4
 
 `--quality draft` khi đang sửa; video dài hơn timeout của tool → chạy nền theo `hyperframes/skills/hyperframes-cli/SKILL.md` (mục Render where).
 
+Trong sandbox chat (claude.ai: tiến trình nền bị hủy khi lệnh kết thúc, 1 CPU): chạy foreground theo đoạn và resume, lặp đến khi `EXIT 0`:
+
+```bash
+tail -f /dev/null | HF_SEGMENTED_CAPTURE=true HF_SEGMENT_FRAMES=120 timeout 265 \
+  npx hyperframes render --quality standard --resume --output ../output/<slug>.mp4
+```
+
+Không đổi `HF_SEGMENT_FRAMES` giữa chừng (mất cache). Xem `video-pipeline/references/kinh-nghiem.md` mục 6.
+
 **Remotion** (trong `productions/<slug>/project`):
 
 ```bash
@@ -37,6 +46,8 @@ Script so độ dài với `timeline.json` (lệch ≤ 1 frame + 0.1 s), kiểm 
 Mở các PNG trong `output/frames/` để chắc video không đen/đứng hình, chữ không tràn, phụ đề không đè nội dung.
 
 ## 3. Phiên bản khác (tuỳ chọn, khi người dùng cần)
+
+- **Chỉ đổi nhạc nền / âm lượng**: không render lại hình — `python .claude/skills/video-pipeline/scripts/remix_audio.py productions/<slug> --video output/<slug>.mp4 --bgm <file nhạc> --bgm-volume 0.24 --out output/<slug>-music.mp4` (lặp nhạc có crossfade, tự hạ nhạc khi có lời đọc, ghép `-c:v copy`).
 
 - **Định dạng khác** (16:9 → 9:16): không crop bừa — tạo production mới với `--format 9:16`, chép `script.json` + `audio/` + `assets.json`, chạy lại `build_timeline.py` + scaffold, rồi chỉnh bố cục từng cảnh cho khung dọc.
 - **Phụ đề cứng tách riêng**: video đã có phụ đề trong hình; muốn bản không phụ đề thì scaffold với `--no-captions` và render file khác (`<slug>-nosub.mp4`), kèm `.srt` để upload.

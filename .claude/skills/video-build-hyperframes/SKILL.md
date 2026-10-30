@@ -29,6 +29,7 @@ Mở `compositions/<sid>.html`, thay phần stub theo `visual` + `onscreen` củ
 - Hiệu ứng/chuyển cảnh/kiểu phụ đề có sẵn: tìm trong registry trước (`npx hyperframes catalog --json`, skill `hyperframes/skills/hyperframes-registry/SKILL.md`), rồi `npx hyperframes add <name>`.
 - Ảnh/logo: `assets/images/...`; footage: `<video muted>` trong cảnh; font ngoài bộ bundled cần `@font-face` tới `assets/fonts/...` (font phải có dấu tiếng Việt).
 - Muốn đổi kiểu phụ đề: sửa `compositions/captions.html` sau khi xoá dòng `GENERATED` (từ đó script sẽ không ghi đè nó nữa).
+- Ảnh tĩnh luôn kèm thêm một lớp chuyển động (warp sao, xoay, bay xuyên 3D); chuyển giữa các cấp độ thu phóng bằng một cảnh three.js liên tục thay vì cắt cảnh; đối tượng đích xuất hiện cùng cỡ với vật xung quanh rồi mới zoom tới. Chi tiết và các bẫy three.js (UMD r158 trong `<template>`, nền trong suốt, `setClearAlpha`, `RepeatWrapping`): `.claude/skills/video-pipeline/references/kinh-nghiem.md` mục 1, 2, 5.
 
 ## 3. Kiểm tra (bắt buộc trước khi báo xong)
 

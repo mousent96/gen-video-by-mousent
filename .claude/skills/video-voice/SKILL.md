@@ -55,6 +55,7 @@ python .claude/skills/video-pipeline/scripts/build_timeline.py productions/<slug
 ```
 
 - Mỗi cảnh = `lead` + độ dài giọng (ffprobe) + `tail`; cảnh không lời dùng `duration` trong script.
+- **Sửa lời một cảnh sau khi đã dựng**: `tts.py productions/<slug> --only <sid>`, rồi chạy lại `build_timeline.py` với **đúng `--lead/--tail` lần đầu** (đọc `voice_offset` trong `timeline.json` cũ) — sai tham số là mọi cảnh lệch mốc. Sau đó chép wav vào `project/assets/audio/voice/`, sửa `data-duration`, dời `data-start` các cảnh sau. Thêm câu bắc cầu khi đoạn mới nối ý không khớp (xem `video-pipeline/references/kinh-nghiem.md` mục 3).
 - Ghi `timeline.json`: `fps`, `width`, `height`, `total_duration`, `total_frames`, và mỗi cảnh `start`, `duration`, `start_frame`, `duration_frames`, `voice` (đường dẫn), `voice_offset` (giây trong cảnh), `words` (mốc tuyệt đối); cộng mảng `captions` (cụm 3–7 từ, ngắt theo dấu câu) và `captions.srt`.
 - `--max-words N` / `--max-chars N` chỉnh độ dài mỗi cụm phụ đề (video dọc nên ngắn: `--max-chars 28`).
 
