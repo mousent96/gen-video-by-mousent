@@ -74,3 +74,63 @@
 - Khi tin nhắn bị cắt hoặc mơ hồ, làm phần đã rõ và hỏi lại phần còn thiếu trong cùng lượt.
 - Khi phải chọn khổ hình (9:16 hay 16:9), hỏi trước khi dựng lại, vì đổi khổ là dựng lại toàn bộ bố cục.
 - Đặt tên bản giao theo phiên bản (`<slug>-v3.mp4`, `-v4`, …) để người dùng so sánh và nói "bản trước tốt hơn ở chỗ X".
+
+## 8. Bài học thêm từ video 2 ("Nếu Mặt Trời biến mất", 8 vòng sửa)
+
+### Hình ảnh phải đọc được trên màn hình thật
+- **Hiệu ứng tinh tế đến mức không thấy là hỏng.** Lớp sáng mờ (haze) cường độ 0,1 trông ổn trong ý tưởng nhưng trên video chỉ là màu đen, người dùng hỏi "sao không thấy khác biệt". Phải đủ tương phản. Cách hiệu quả: thêm **hạt bụi lấp lánh** trong vùng sáng và cho từng hạt tắt khi vùng tối đi qua. Luôn xem lại khung hình đã render (`ffmpeg -ss … -frames:v 1`), không chỉ snapshot.
+- **Không dùng viền tròn hay vòng sáng để biểu diễn "mặt sóng" ánh sáng.** Người dùng chê "bo viền hình tròn". Thay bằng vùng sáng tối dần từ tâm ra, mép mềm.
+- **Hình minh họa chỉ dùng đúng lúc cần.** Tia sáng đo khoảng cách chỉ dùng ở cảnh nói về khoảng cách. Kéo dài nó sang cảnh khác thì người dùng bảo bỏ đi. Thước đo mờ phía dưới cũng bị coi là thừa.
+- **Vật biến mất phải có quá trình.** Mặt Trời tắt phụt bị chê; cách được duyệt là đổi màu vàng → cam → đỏ thẫm → đen trong 3–4 giây rồi mới tắt hẳn.
+- **Phía tối của hành tinh vẫn giữ màu thật**, chỉ tối đi (khoảng 25% độ sáng, có đổ bóng theo hướng nhìn). Đen kịt chỉ còn đèn thành phố thì bị chê khó nhìn.
+- **Băng/tuyết "như tô màu trắng" bị chê.** Cách được duyệt:
+  - mặt nạ băng dùng **nhiễu 3D theo toạ độ vật thể** (fbm trên `position`); nhiễu theo UV hay texture mây sẽ ra sọc chéo và đường nối;
+  - băng lan thành từng mảng, mép lởm chởm; vùng gần cực đóng trước;
+  - trên đất liền là tuyết nhưng vẫn giữ độ sáng tối của địa hình; ngoài biển là băng biển xanh xám có vết nứt;
+  - mây thưa dần khi băng lan.
+- **Hiệu ứng lan rộng (đóng băng, cháy, mọc…): bắt đầu cận cảnh tại một điểm rồi lùi dần ra toàn cảnh** trong lúc hiệu ứng lan.
+- **Bên trong hành tinh: không dựng cảnh "chui xuyên lòng đất".** Kết quả trông như đường hầm ánh sáng, người xem không hiểu. Cách được duyệt là **mặt cắt 3D kiểu sách giáo khoa**:
+  - nhấc một múi 1/4 ra (hai mặt phẳng cắt dùng `clipIntersection`), nhìn chéo 3/4;
+  - hai mặt cắt sáng khác nhau để thấy rõ khối;
+  - tỉ lệ lớp đúng thực tế: lõi trong 0,19R, lõi ngoài 0,546R, vỏ ≈ 0,975R;
+  - nhãn từng lớp xếp thành cột, có đường chỉ dẫn tới đúng lớp, kèm nhiệt độ.
+
+### Liền mạch
+- **Đổi góc nhìn mà không cắt cảnh:** từ góc nhìn xa, zoom thẳng xuống bề mặt, rồi **ngẩng camera lên chân trời** (xoay hướng nhìn và vector `up` theo pháp tuyến bề mặt). Cắt thẳng từ nhìn trên cao sang nhìn từ mặt đất bị coi là "bị cắt cảnh".
+- **Đứng trên hành tinh:** đặt camera theo kinh/vĩ độ có ý nghĩa với khán giả (ví dụ Việt Nam), hướng `up` = pháp tuyến bề mặt.
+- **Đoạn kết không được gấp.** Thêm 2–3 nhịp bắc cầu: trả lời câu hỏi người xem đang nghĩ ("hơi ấm lõi có đủ không?") → **tua ngược thời gian** về trạng thái ban đầu → câu kết gợi cảm xúc và nối lại con số mở đầu.
+- **Tua ngược** làm bằng ánh xạ thời gian `stateT(tReal)` trong `draw()`. Mọi thứ đọc theo `stateT` sẽ tự chạy ngược.
+  - **Cẩn thận:** nhãn, chữ và DOM gắn theo `stateT` sẽ hiện lại khi tua qua mốc của chúng (lỗi người dùng chụp màn hình). Giới hạn chúng theo thời gian thật (`tReal`).
+
+### Kỹ thuật three.js
+- `ShaderMaterial` có cắt (clipping):
+  - cần `clipping:true`;
+  - chèn đủ bốn chunk `#include <clipping_planes_pars_vertex|vertex|pars_fragment|fragment>`, mỗi `#include` **phải nằm trên một dòng riêng** (thêm `\n` trước nó trong chuỗi JS);
+  - vertex shader phải có biến `mvPosition`.
+  
+  Nếu sai, shader không biên dịch và vật thể biến mất mà không báo lỗi trên hình. Xem `hyperframes check` mục `console_error`.
+- three.js **cắt bỏ phần có khoảng cách tới mặt phẳng < 0**. Với `clipIntersection:true`, chỉ phần nằm phía âm của *tất cả* mặt phẳng mới bị cắt, nên tạo được một múi.
+- Mọi giá trị phụ thuộc camera (độ mờ theo khoảng cách, vị trí nhãn qua `project(cam)`) phải tính **sau** khi cập nhật camera trong khung đó, hoặc tính từ `camAt(t)`. Dùng `cam` của khung trước sẽ sai hẳn khi snapshot/seek.
+- Billboard phát sáng lớn (haze) phải to hơn nhiều so với vùng camera nhìn tới, nếu không sẽ lộ mép thẳng.
+
+### Âm thanh theo kịch tính
+- **Tắt hẳn nhạc** đúng khoảnh khắc mất mát (Mặt Trời tắt), thay bằng tiếng tích tắc. Cho nhạc trở lại khi mọi thứ được "cứu".
+- Tiếng tích tắc tạo bằng `ffmpeg -f lavfi aevalsrc` (xung 2,2 kHz tắt dần). Tiếng tua ngược: `areverse` file whoosh.
+- **Chèn quãng nghỉ vào lời đọc mà không TTS lại:** tìm đoạn im lặng giữa hai câu (RMS ≈ 0, numpy), cắt wav thành hai phần, rồi đặt `data-start` phần sau muộn hơn.
+
+### Bản dọc 9:16 từ bản ngang 16:9
+- Hai vật nằm ngang (Mặt Trời – Trái Đất): **xoay camera 90°** (`up` = hướng về vật phía trên) trong các cảnh có cả hai. Nhớ xoay về `up=(0,1,0)` trước các cảnh cận.
+- Nhìn từ trên xuống: đặt `up=(0,0,-1)` để tránh suy biến khi `lookAt` gần song song với `up`.
+- Cận cảnh hành tinh: nhân khoảng cách camera khoảng 1,5 lần, vì chiều ngang khung dọc chỉ bằng 0,56 lần chiều ngang khung ngang ở cùng góc nhìn dọc.
+- Chữ lớn đặt ở `top ≈ 1420–1440px`, đồng hồ ở `top ≈ 230px`, tránh giao diện TikTok trên và dưới. Nhãn chú thích xếp thành cột dưới vật thể.
+- Ảnh nền 3:2 phủ khung dọc: phóng theo chiều cao (2880×1920), dịch để điểm nhấn vào giữa, rồi tính lại `transform-origin`.
+
+### Quy trình tiết kiệm thời gian render
+- **Duyệt từng cảnh bằng bản xem trước một khoảng thời gian.** Copy project sang `preview/`:
+  1. Trong composition chính, đổi `tl.to(proxy,{t:D…})` thành `tl.fromTo(proxy,{t:OFF},{t:OFF+DUR,…})`.
+  2. Bỏ các tween DOM không thuộc khoảng đó.
+  3. Đặt `data-duration` của root bằng `DUR`.
+  
+  Render 15–30 giây chỉ mất 2–3 lượt thay vì 10 lượt.
+- **Sửa lỗi trong một khoảng ngắn thì không render lại cả video:** render riêng khoảng đó theo cách trên, rồi ghép bằng `ffmpeg trim=start_frame/end_frame` + `concat` theo **số khung hình** (frame = giây × fps, mặc định 30).
+- Video 84 giây có WebGL nặng (băng, mặt cắt) mất khoảng 11 lượt render, mỗi lượt khoảng 4,5 phút. Báo trước cho người dùng và gom sửa đổi trước khi render cả bài.

@@ -14,7 +14,7 @@ Workspace có 2 engine, mỗi engine kèm bộ skill gốc của nó (đọc khi
 
 Hai thư mục `hyperframes/` và `remotion/` là **source repo** — không sửa, không build chúng. Video được làm trong `productions/<slug>/`, chạy CLI bản npm (`npx hyperframes`, `npx remotion`).
 
-> Trước khi dựng video khoa học/khám phá, video "điện ảnh", hoặc khi người dùng gửi video mẫu: đọc `references/kinh-nghiem.md` (bài học từ 12 vòng sửa thực tế: ảnh thật + chuyển động liên tục, zoom liền mạch, kịch bản bắc cầu, render trong sandbox, thay nhạc không render lại).
+> Trước khi dựng video khoa học/khám phá, video "điện ảnh", hoặc khi người dùng gửi video mẫu: đọc `references/kinh-nghiem.md` (bài học từ 2 video thực tế, 20 vòng sửa: ảnh thật + chuyển động liên tục, zoom liền mạch, kịch bản bắc cầu, render trong sandbox, thay nhạc không render lại, mặt cắt 3D, tua ngược thời gian, xem trước/vá một khoảng thời gian, chuyển 16:9 sang 9:16).
 
 ## Các bước
 
